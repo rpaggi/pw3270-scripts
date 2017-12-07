@@ -1,0 +1,46 @@
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+
+import py3270
+import sys
+
+if len(sys.argv) < 2:
+	print "Você precisa expecificar a sessaoi,o numero inicial e a coluna"
+	exit()
+else:
+	tela  = sys.argv[1]
+	n     = int(sys.argv[2])
+	c     = sys.argv[3]
+
+		
+term = py3270.Terminal("pw3270:"+tela)
+# term.GetStringAt(3,2,77)
+# term.PFKey(8)
+# term.Enter()
+# term.WaitForReady()
+# term.SetStringAt(4, 15, "RES")
+# if term.IsReady():
+# term.Action("firstfield")
+# term.Action("eraseeof")
+# term.SetCursorPosition(24, 9)
+
+if term.IsReady():
+	continua = True
+	l = 8
+	while continua:
+		while l < 25:
+			term.SetCursorPosition(l, int(c))
+			term.Action("eraseeof")
+			term.WaitForReady()
+			term.SetStringAt(l, int(c), str(n))
+			n += 1
+			l += 1
+			pass
+		term.Enter()
+		term.WaitForReady()
+		term.PFKey(8)
+		p = raw_input("Deseja continuar(S/N)?")
+		if p.upper() != "S":
+			continua = False	
+		l = 8	
+		pass

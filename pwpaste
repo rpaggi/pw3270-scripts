@@ -1,0 +1,64 @@
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+
+import py3270
+import sys
+
+if len(sys.argv) < 3:
+	print "Falta argumentos. Exemplo: pwpaste A arquivo.txt"
+	exit()
+else:
+	tela = sys.argv[1];
+	arquivo = sys.argv[2];
+
+term = py3270.Terminal("pw3270:"+tela)
+
+if term.IsReady():
+	rc = term.CmpStringAt(1,2,"EDIT")
+	if not rc == 0:
+		print "Você precisa abrir o fonte no modo EDIT"
+		exit()
+
+	rc = term.CmpStringAt(3,2,"=COLS>")
+	if rc == 0:
+		term.SetStringAt(2, 15, "COLS")
+		term.Enter()
+		term.WaitForReady()
+
+	term.SetStringAt(2, 15, "DEL ALL NX")
+	term.Enter()
+	term.WaitForReady()
+
+	term.Action("firstfield")
+	term.WaitForReady()
+	term.Action("eraseeof")
+	term.WaitForReady()
+
+	f = open(arquivo, 'r+');
+
+	nlin = 4
+	term.SetStringAt(3, 2, "I50")
+	term.Enter()
+	term.WaitForReady()
+
+	for line in f:
+		term.SetStringAt(nlin, 9, line)
+		nlin += 1
+
+		if nlin == 24:
+			term.SetCursorPosition(24, 9)
+			term.PFKey(8)
+			term.WaitForReady()	
+	
+			term.SetStringAt(3, 2, "I50")
+			term.Enter()
+			term.WaitForReady()		
+
+			nlin = 4
+
+	term.Enter()	
+	term.WaitForReady()		
+
+	f.close()
+	
+#	term.Enter()

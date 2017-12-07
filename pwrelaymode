@@ -1,0 +1,27 @@
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+
+import py3270
+import sys
+
+if len(sys.argv) < 3:
+	print "Você precisa expecificar a sessao e a aplicação que deseja acessar."
+	print "Ex: ./pwrelaymode A EVT11"
+	exit()
+else:
+	tela      = sys.argv[1]
+	aplicacao = sys.argv[2];
+        
+
+term = py3270.Terminal("pw3270:"+tela)
+
+if term.IsReady():
+	if "REDE BRADESCO" not in term.GetStringAt(1, 28 ,13):
+		print "Para executar esta macro é necessário estar na tela do ACCTER"
+		exit()
+ 
+	while ("REDE BRADESCO" in term.GetStringAt(1, 28, 13)):
+		term.SetStringAt(23,14, aplicacao)
+		term.Enter()
+		term.WaitForReady()
+		pass

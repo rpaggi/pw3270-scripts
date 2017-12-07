@@ -1,0 +1,59 @@
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+
+import py3270
+import sys
+
+if len(sys.argv) < 3:
+	print "Você precisa expecificar a sessao e o formato da saída como argumento"
+	print "Ex: ./pwcopy A cbl"
+	exit()
+else:
+	tela    = sys.argv[1]
+	formato = sys.argv[2].lower()
+        
+
+term = py3270.Terminal("pw3270:"+tela)
+
+if term.IsReady():
+	nome = term.GetStringAt(1,2,77)
+	nome = nome.split('(', 1)
+	nome = nome[1].split(')',1)[0];
+	f = open(nome+'.'+formato, 'w');
+
+        rc = term.CmpStringAt(3,2,"=COLS>")
+	if rc == 0:
+		term.SetStringAt(2, 15, "COLS")
+		term.Enter()
+		term.WaitForReady()
+	
+	nlin = 4 
+	continua = True
+	cEnd = "**************************** Bottom of Data ****************************"
+
+	term.SetStringAt(2, 15, "RES")
+	term.Enter()
+	term.WaitForReady()
+
+	term.SetStringAt(2, 15, "M")
+	term.PFKey(7)
+	term.WaitForReady()
+
+	while continua:
+		clin = term.GetStringAt(nlin, 9, 72)
+		nlin += 1
+		
+		if nlin > 24:
+			term.PFKey(8)
+			term.WaitForReady()
+			nlin = 3
+		
+		if clin == cEnd:
+			continua = False
+		else:
+			f.write(clin+'\n')
+			#print clin
+
+	f.close()
+	
+#	term.Enter()

@@ -1,0 +1,194 @@
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+
+import py3270
+import sys
+
+if len(sys.argv) < 3:
+	print "Você precisa expecificar a sessao, a opcao e o ambiente"
+	print "Ex para travar...: pwtrava A T 50"
+	print "Ex para destravar: pwtrava A D 04"
+	exit()
+else:
+	tela  = sys.argv[1]
+	opcao = sys.argv[2]
+	amb   = sys.argv[3]
+
+AORXXM04 = ['AOR00M04', 'AOR01M04', 'AOR0AM04', 'AOR0BM04']
+AORXXM20 = ['AOR00M20', 'AOR01M20', 'AOR0AM20', 'AOR0BM20']
+AORXXM50 = ['AOR00M50', 'AOR01M50', 'AOR02M50', 'AOR03M50', 'AOR04M50', 'AOR0AM50', 'AOR0BM50']
+		
+term = py3270.Terminal("pw3270:"+tela)
+# term.GetStringAt(3,2,77)
+# term.PFKey(8)
+# term.Enter()
+# term.WaitForReady()
+# term.SetStringAt(4, 15, "RES")
+# if term.IsReady():
+# term.Action("firstfield")
+# term.Action("eraseeof")
+# term.SetCursorPosition(24, 9)
+
+def trava(term, amb):
+	i = 0
+	error = 0
+	loaderror = []
+	locais = []
+	print             "Digite os dados solicitados"
+	chave = raw_input("Chave: ")
+	senha = raw_input("Senha: ")
+	print             "Entre com os programas, é necessário pelo menos 1 programa, quando acabar aperte enter"
+	programas = []
+	inputProg = raw_input("1: ")
+
+	while inputProg == '':
+		print "Você precisa entrar pelo menos um programa"
+		inputProg = raw_input("1: ")
+		pass		
+
+	programas.append(inputProg)
+
+	print "Você ainda pode entrar com mais 3 programas, quando finalizar deixe em branco"
+	while inputProg != '' and i < 3:
+		inputProg = raw_input(str(i+2)+ ": ")
+		if inputProg != '':
+			programas.append(inputProg)
+			i+=1
+		pass
+	
+	if "EMSP01" not in term.GetStringAt(1,1,80):
+		print "Para executar a macro é necessario estar na tela do accter"
+		trava(term, amb)
+		exit()
+
+	if amb == '04':
+		locais = AORXXM04
+	elif amb == '20':
+		locais = AORXXM20
+	else:
+		locais = AORXXM50
+	
+	for a in locais:
+		error = 0
+		term.SetStringAt(23, 14, a)
+		term.Enter()
+		term.WaitForReady()
+		
+		term.SetStringAt(18, 20, chave)
+		term.SetStringAt(19, 20, senha)
+		term.Enter()
+		term.WaitForReady()
+
+		if ("Password invalida" in term.GetStringAt(23,1,80)) or ("Userid invalido" in term.GetStringAt(23,1,80)):
+			print "Usuário/Senha inválidos"
+			term.Action("clear")
+			term.WaitForReady()
+			term.SetStringAt(1, 2, "disc")
+			term.Enter()
+			term.WaitForReady()
+			trava(term, amb)
+			exit()
+
+		term.SetStringAt(1, 1, "XXT0")
+		term.Enter()
+		term.WaitForReady()
+
+		if "Existing Sessions" in term.GetStringAt(1,1,80):
+			term.SetStringAt(6, 2, "L")
+			term.SetStringAt(7, 2, "L")
+			term.SetStringAt(8, 2, "L")
+			term.SetStringAt(9, 2, "L")
+			term.SetStringAt(10, 2, "L")
+			term.Enter()
+			term.WaitForReady()
+
+		term.SetStringAt(2, 15, "1")
+		term.Enter()
+		term.WaitForReady()
+
+		i = 0
+		j = 0
+		for pgm in programas:
+			term.SetStringAt(9+i, 6, pgm)
+			term.SetStringAt(9+i, 30, 'Y')
+			term.Enter()
+			term.WaitForReady()
+
+			if "Load Subprogram Symbols" in term.GetStringAt(7, 1, 80):
+				error += 1
+
+			if i > 0:
+				j = 1
+
+			if i > 1:
+				term.Action("firstfield")
+				term.SetCursorPosition(20, 15)
+				term.PFKey(8)
+
+			term.SetStringAt(20+j, 15, '    ')			
+			term.SetStringAt(20+j, 44, pgm)
+			term.Enter()
+			term.WaitForReady()
+
+			i+=1
+
+		if error > 0:
+			loaderror.append(a)
+
+		term.PFKey(3)
+		term.WaitForReady()
+		term.PFKey(3)
+		term.WaitForReady()
+		term.PFKey(12)
+		term.WaitForReady()
+
+	if len(loaderror) > 0:
+		pgms = ""
+		for a in loaderror:
+			pgms = pgms + a + ','
+		print "Erro ao carregar nos seguintes ambientes: " + pgms
+
+	exit()
+
+def destrava(term, amb):
+	if "EMSP01" not in term.GetStringAt(1,1,80):
+		print "Para executar a macro é necessario estar na tela do accter"
+		trava(term, amb)
+		exit()
+
+	if amb == '04':
+		locais = AORXXM04
+	elif amb == '20':
+		locais = AORXXM20
+	else:
+		locais = AORXXM50
+	
+	for a in locais:
+		term.SetStringAt(23, 14, a)
+		term.Enter()
+		term.WaitForReady()
+
+		term.Action("clear")
+		term.WaitForReady()
+
+		term.SetStringAt(1, 1, "XXT0")
+		term.Enter()
+		term.WaitForReady()
+
+		term.SetStringAt(2, 15, "L")
+		term.Enter()
+		term.WaitForReady()
+
+		term.SetStringAt(11, 51, "N")
+		term.Enter()
+		term.WaitForReady()
+
+		term.SetStringAt(1, 2, "DISC")
+		term.Enter()
+		term.WaitForReady()
+
+if term.IsReady():
+	if opcao.upper() == 'D':
+		destrava(term, amb)
+	else:
+		trava(term, amb)
